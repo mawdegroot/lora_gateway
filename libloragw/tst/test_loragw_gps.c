@@ -67,13 +67,14 @@ static void gps_process_sync(void) {
     uint32_t ppm_tstamp;
     struct timespec ppm_gps;
     struct timespec ppm_utc;
+    struct timespec ppm_utc_acc;
 
     /* variables for timestamp <-> GPS time conversions */
     uint32_t x, z;
     struct timespec y;
 
     /* get GPS time for synchronization */
-    int i = lgw_gps_get(&ppm_utc, &ppm_gps, NULL, NULL);
+    int i = lgw_gps_get(&ppm_utc, &ppm_utc_acc, &ppm_gps, NULL);
     if (i != LGW_GPS_SUCCESS) {
         printf("    No valid reference GPS time available, synchronization impossible.\n");
         return;
@@ -87,7 +88,7 @@ static void gps_process_sync(void) {
     }
 
     /* try to update synchronize time reference with the new GPS & timestamp */
-    i = lgw_gps_sync(&ppm_ref, ppm_tstamp, ppm_utc, ppm_gps);
+    i = lgw_gps_sync(&ppm_ref, ppm_tstamp, ppm_utc, ppm_utc_acc, ppm_gps);
     if (i != LGW_GPS_SUCCESS) {
         printf("    Synchronization error.\n");
         return;
@@ -118,13 +119,12 @@ static void gps_process_sync(void) {
 static void gps_process_coords(void) {
     /* position variable */
     struct coord_s coord;
-    struct coord_s gpserr;
-    int    i = lgw_gps_get(NULL, NULL, &coord, &gpserr);
+    int    i = lgw_gps_get(NULL, NULL, NULL, &coord);
 
     /* update gateway coordinates */
     if (i == LGW_GPS_SUCCESS) {
         printf("# GPS coordinates: latitude %.5f, longitude %.5f, altitude %i m\n", coord.lat, coord.lon, coord.alt);
-        printf("# GPS err:         latitude %.5f, longitude %.5f, altitude %i m\n", gpserr.lat, gpserr.lon, gpserr.alt);
+        printf("# GPS accuracy:    horizontal %.1f m, vertical %.1f m\n", coord.eha, coord.eva);
     }
 }
 
@@ -198,7 +198,7 @@ int main()
         /* blocking non-canonical read on serial port */
         ssize_t nb_char = read(gps_tty_dev, serial_buff + wr_idx, LGW_GPS_MIN_MSG_SIZE);
         if (nb_char <= 0) {
-            printf("WARNING: [gps] read() returned value %d\n", nb_char);
+            printf("WARNING: [gps] read() returned value %ld\n", nb_char);
             continue;
         }
         wr_idx += (size_t)nb_char;
@@ -211,7 +211,7 @@ int main()
             size_t frame_size = 0;
 
             /* Scan buffer for UBX sync char */
-            if (serial_buff[rd_idx] == LGW_GPS_UBX_SYNC_CHAR) {
+            if (serial_buff[rd_idx] == (char)LGW_GPS_UBX_SYNC_CHAR) {
 
                 /***********************
                  * Found UBX sync char *
