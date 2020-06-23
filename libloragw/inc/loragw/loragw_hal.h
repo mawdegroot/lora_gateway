@@ -236,6 +236,8 @@ struct lgw_pkt_rx_s {
     uint8_t     if_chain;       /*!> by which IF chain was packet received */
     uint8_t     status;         /*!> status of the received packet */
     uint32_t    count_us;       /*!> internal concentrator counter for timestamping, 1 microsecond resolution */
+    uint32_t    count_raw;      /*!> internal concentrator counter for timestamping, 31.25 nanosecond resolution */
+    uint32_t    count_corr;     /*!> delay correction for internal concentrator counter for timestamping */
     uint8_t     rf_chain;       /*!> through which RF chain the packet was received */
     uint8_t     modulation;     /*!> modulation used by the packet */
     uint8_t     bandwidth;      /*!> modulation bandwidth (LoRa only) */

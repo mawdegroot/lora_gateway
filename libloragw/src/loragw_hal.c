@@ -1319,6 +1319,8 @@ int lgw_receive(uint8_t max_pkt, struct lgw_pkt_rx_s *pkt_data) {
 
         raw_timestamp = (uint32_t)buff[sz+6] + ((uint32_t)buff[sz+7] << 8) + ((uint32_t)buff[sz+8] << 16) + ((uint32_t)buff[sz+9] << 24);
         p->count_us = raw_timestamp - timestamp_correction;
+        p->count_raw = raw_timestamp;
+        p->count_corr = timestamp_correction;
         p->crc = (uint16_t)buff[sz+10] + ((uint16_t)buff[sz+11] << 8);
 
         /* advance packet FIFO */
